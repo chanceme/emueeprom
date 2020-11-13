@@ -32,7 +32,15 @@ int main()
         printf("> ");
         scanf("%s", str);
 
-        if(!strcmp(str, "write"))
+        if(!strcmp(str, "?") || !strcmp(str, "help"))
+        {
+            printf("'write'   - write value to virtual address\n"
+                    "'read'    - read value stored at virtual address\n"
+                    "'erase'   - erase data at virtual address\n"
+                    "'flush'   - write current buffer to flash\n"
+                    "'destroy' - erases emulated eeprom from flash\n");
+        }
+        else if(!strcmp(str, "write"))
         {
             printf("Virtual address: ");
             scanf("%d", &vAddr);
