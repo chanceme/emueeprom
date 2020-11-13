@@ -14,11 +14,10 @@ To build this project and test it's basic features in a terminal, issue the foll
 
 ```
 $ make
-gcc -I../inc -Wall -DLINUX -c -o main.o main.c
-gcc -I../inc -Wall -DLINUX -c -o flash.o flash.c
-gcc -I../inc -Wall -DLINUX -c -o emueeprom.o emueeprom.c
-gcc -I../inc -Wall -DLINUX -c -o crc16.o crc16.c
-gcc -o emueeprom main.o flash.o emueeprom.o crc16.o -I../inc -Wall -DLINUX
+gcc -I../inc  -Wall -DLINUX    -c -o main.o main.c
+gcc -I../inc  -Wall -DLINUX    -c -o flash.o flash.c
+gcc -I../inc  -Wall -DLINUX    -c -o emueeprom.o emueeprom.c
+gcc -o emueeprom main.o flash.o emueeprom.o -I../inc  -Wall -DLINUX 
 ```
 
 To run the program:
