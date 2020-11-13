@@ -12,7 +12,6 @@
 
 #include <flash.h>
 
-// static bool m_Init = false;
 static int m_fd = 0;
 
 /*!------------------------------------------------------------------------------
@@ -62,7 +61,6 @@ int flashInit(void)
 
 /*!------------------------------------------------------------------------------
     @brief Write buffer to binary file.
-    @param fd - File descriptor.
     @param offset - Offset from start of file to write to.
     @param *pBuffer - Buffer with the data to be written.
     @param numBytes - Number of byte to be written.
@@ -91,7 +89,6 @@ ssize_t flashWrite(off_t offset, void const *pBuff, size_t numBytes)
 
 /*!------------------------------------------------------------------------------
     @brief Read binary file to buffer.
-    @param fd - File descriptor.
     @param offset - Offset from start of file to read from.
     @param *pBuffer - Buffer to store read data.
     @param numBytes - Number of byte to be read.
@@ -120,8 +117,8 @@ ssize_t flashRead(off_t offset, void *pBuff, size_t numBytes)
 
 /*!------------------------------------------------------------------------------
     @brief Erase a block by writting all 0xFF.
-    @param fd - File descriptor.
     @param blockNum - Which block to erase.
+    @param blockCount - Amount of blocks to erase.
     @return None.
 *///-----------------------------------------------------------------------------
 void flashBlockErase(int blockNum, int blockCount)

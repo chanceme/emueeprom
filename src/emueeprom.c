@@ -4,8 +4,6 @@
 * Notes:
 * - Must used consectitive blocks.
 *
-* Todos:
-* - Add support for different amount of blocks used
 */
 
 #include <assert.h>
@@ -42,16 +40,10 @@
 #define UNIQUE_ID 0xBEEF
 #define INIT_CRC 0xFFFF
 
-// Buffer Position
 #define BUFFER_START 0x0000
-
-// Page Count
 #define PAGE_START 0x0001
-
-// Transfer count
 #define TRANSFER_START 0x0000
 #define TRANSFER_END 0xEEEE
-
 #define BITS_PER_BYTE 8u
 
 typedef struct {
@@ -258,7 +250,6 @@ ssize_t emuEepromFlush(void)
         }
     }
 
-
     return count;
 }
 
@@ -284,7 +275,7 @@ ssize_t _emuEepromBufferWrite(uint16_t vAddr, void const *pBuffer, uint16_t buff
         uint16_t remainingSpace = ((PAGE_SIZE - CRC_SIZE) - m_info.bufferPos);
         count++;
 
-        if(remainingSpace >= (ENTRY_SIZE + buffLen)) // write normally
+        if(remainingSpace >= (ENTRY_SIZE + buffLen)) 
         {
             memcpy(&m_info.pageBuffer[m_info.bufferPos + VADDR_OFFSET], &vAddr, sizeof(vAddr));
             memcpy(&m_info.pageBuffer[m_info.bufferPos + SIZE_OFFSET], &buffLen, sizeof(buffLen));
@@ -294,7 +285,7 @@ ssize_t _emuEepromBufferWrite(uint16_t vAddr, void const *pBuffer, uint16_t buff
 
             count += buffLen;
         }
-        else // multiple pages needed
+        else 
         { 
             uint8_t remainder = ((buffLen - remainingSpace) % MAX_DATA_PER_PAGE);
             uint16_t pagesNeeded = ((buffLen - remainingSpace) / MAX_DATA_PER_PAGE) + remainder + 1u; // 1 for existing page
@@ -372,7 +363,7 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
             break;
         }
     }
-    // search buffer starting with the last/end
+    // search buffer starting with the last
     if(numEntries)
     {
         for(int i = numEntries; i > 0; i--)
@@ -520,12 +511,10 @@ ssize_t _emuEepromBlockTransfer(void)
 
         for(uint16_t i = 0; i < PAGES_PER_BLOCK; i++)
         {
-            // checking bitmap, write virtual address data to new block, updating bitmap
             offset = (((m_info.currBlock * BLOCK_SIZE) + (BLOCK_SIZE - PAGE_SIZE)) - (PAGE_SIZE * i));
             count = flashRead(offset, tempBuffer, PAGE_SIZE);
             if(count > 0)
             {
-                // validate
                 uint16_t tempCrc = _emuEepromPageCrc(tempBuffer);
                 if(tempCrc == (uint16_t)tempBuffer[PAGE_CRC_OFFSET])
                 {
@@ -712,7 +701,7 @@ uint32_t _emuEepromFindAvailablePage(uint32_t offset, uint16_t change)
     ssize_t count = flashRead(offset, &tempVAddr, sizeof(tempVAddr));
     if(count > 0)
     {
-        if(tempVAddr <= MAX_VIRTUAL_ADDR) // found entry
+        if(tempVAddr <= MAX_VIRTUAL_ADDR) 
         {
             count = flashRead(offset + PAGE_SIZE, &tempVAddr, sizeof(tempVAddr));
             if(count > 0)
@@ -731,7 +720,7 @@ uint32_t _emuEepromFindAvailablePage(uint32_t offset, uint16_t change)
                 return 0u;
             }
         }
-        else // not found, look further back
+        else
         {
             count = flashRead(offset - PAGE_SIZE, &tempVAddr, sizeof(tempVAddr));
             if(count > 0)
@@ -763,12 +752,7 @@ uint32_t _emuEepromFindAvailablePage(uint32_t offset, uint16_t change)
 *///-----------------------------------------------------------------------------
 uint16_t _emuEepromHeaderCrc(header_info_t info)
 {
-    uint16_t crc = 0xCECE; // temp until I figure out what's wrong with CRC..
-    // uint16_t crc = INIT_CRC;
-
-    // crc = crc16(&info.uniqueId, sizeof(info.uniqueId), crc);
-    // crc = crc16(&info.blockNum, sizeof(info.blockNum), crc);
-    // crc = crc16(&info.blockTotal, sizeof(info.blockTotal), crc);
+    uint16_t crc = 0xCECE; 
 
     return crc;
 }

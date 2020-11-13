@@ -4,7 +4,7 @@
 
 ## Getting Started
 
-You can clone the repository using giy by issuing the following command:
+You can clone the repository using git by issuing the following command:
 
 ```
 $ git clone https://github.com/chanceme/emueeprom.git
@@ -30,7 +30,7 @@ Enter 'help' or '?' for commands.
 
 ## Goals/To-Dos
 
-The main goal is to create a simple to use wear-leveling application that can be used by embedded systems. Other goals and to-dos are:
+The main goal is to create a simple to use, wear-leveling application that can be used by embedded devices. Other goals and to-dos are:
 
 * Get repository created, initial push
 * Clean existing code
@@ -50,8 +50,8 @@ The main goal is to create a simple to use wear-leveling application that can be
 
 ### Add New Support
 
-* Device specific flash.c that share same header
-* Added device specific flash parameters to flash_config.h
+* Add device specific flash.c that share same header
+* Add device specific flash parameters to flash_config.h
 * Change preprocessor value in Makefile
 
 ## Overview
