@@ -73,8 +73,8 @@ ssize_t _emuEepromBufferWrite(uint16_t vAddr, void const *pBuffer, uint16_t buff
 size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void *pBuffer, uint16_t buffLen);
 ssize_t _emuEepromBlockRead(uint8_t *pBitmap, uint16_t vAddr, void *pBuffer, uint16_t buffLen);
 ssize_t _emuEepromBlockTransfer(void);
-void _emuEepromSetBit(uint16_t vAddr, uint8_t *pBitmap, uint16_t buffLen);
-uint8_t _emuEepromReadBit(uint16_t vAddr, uint8_t *pBitmap);
+void _emuEepromSetBit(uint16_t startAddr, uint16_t vAddr, uint8_t *pBitmap, uint16_t buffLen);
+uint8_t _emuEepromReadBit(uint16_t startAddr, uint16_t vAddr, uint8_t *pBitmap);
 ssize_t _emuEepromBlockFormat(blocks_t block, header_info_t header);
 blocks_t _emuEepromActiveBlock(header_info_t *pHeader);
 uint16_t _emuEepromCurrentPage(blocks_t block);
@@ -168,19 +168,11 @@ ssize_t emuEepromRead(uint16_t vAddr, void *pBuffer, uint16_t buffLen)
     assert((vAddr + buffLen) <= MAX_VIRTUAL_ADDR);
 
     ssize_t count = 0;
-    uint8_t *pBitmap; 
+    uint8_t *pBitmap =  NULL; 
 
-    if(buffLen > BITS_PER_BYTE)
-    {
-        pBitmap = malloc((buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
-        memset(pBitmap, 0, (buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
-    }
-    else
-    {
-        pBitmap = malloc(sizeof(uint8_t));
-        memset(pBitmap, 0, sizeof(uint8_t));
-    }
-        
+    pBitmap = malloc((buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
+    memset(pBitmap, 0, (buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
+
     count = _emuEepromPageRead(m_info.pageBuffer, pBitmap, vAddr, pBuffer, buffLen);
     if((count >= 0) && (count != buffLen))
     {
@@ -342,21 +334,19 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
     size_t numRead = 0;
     uint16_t numEntries = 0; 
     uint8_t *pBuff = (uint8_t *)pBuffer;
-    uint16_t *pEntries;
-
-    pEntries = malloc(sizeof(*pEntries));
+    uint16_t *pEntries = NULL;
 
     // find all entries in buffer
-    for(uint16_t i = 0; i < PAGE_SIZE; i++)
+    for(uint16_t i = 0; i < PAGE_CRC_OFFSET; i++)
     {
         uint16_t entrySize = 0;
         memcpy(&entrySize, &pPage[i + SIZE_OFFSET], sizeof(entrySize));
         if((entrySize > 0) && (entrySize < MAX_VIRTUAL_ADDR))
         {
+            pEntries = (uint16_t *)realloc(pEntries, sizeof(*pEntries) + (sizeof(*pEntries) * numEntries));
             pEntries[numEntries] = i;
             i += VADDR_SIZE + SIZE_SIZE + entrySize;
-            numEntries++;
-            pEntries = realloc(pEntries, sizeof(*pEntries) + (sizeof(*pEntries) * numEntries));
+            numEntries++;   
         }
         else
         {
@@ -380,6 +370,7 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
             if(((tempVAddr <= vAddr) && (vAddr < (tempVAddr + tempSize))) || 
             ((tempVAddr < (vAddr + buffLen)) && ((vAddr + buffLen) <= (tempVAddr + tempSize))))
             {
+
                 if(tempVAddr <= vAddr)
                 {
                     foundIndex = (vAddr - tempVAddr);
@@ -403,13 +394,13 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
                 
                 for(int u = 0; u < amountFound; u++)
                 {   
-                    
                     uint16_t foundVAddr = foundIndex + tempVAddr + u;
+                    // printf("foundVAddr: %d\nfoundIndex: %d\ntempVAddr: %d\nu: %d\n", foundVAddr, foundIndex, tempVAddr, u);
                     // could be fragmented and require multiple entries
-                    if(_emuEepromReadBit(foundVAddr, pBitmap) == 0)
+                    if(_emuEepromReadBit(vAddr, foundVAddr, pBitmap) == 0)
                     {
                         memcpy(&pBuff[storeIndex + u], &pPage[foundIndex + u + DATA_OFFSET] , sizeof(uint8_t));
-                        _emuEepromSetBit(foundVAddr, pBitmap, sizeof(uint8_t));
+                        _emuEepromSetBit(vAddr, foundVAddr, pBitmap, sizeof(uint8_t));
                         numRead++;
                     }
                 }
@@ -421,8 +412,11 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
             }
         }
     }
-    
-    free(pEntries);
+
+    if(pEntries != NULL)
+    {
+        free(pEntries);
+    }
 
     return numRead;
 }
@@ -539,14 +533,14 @@ ssize_t _emuEepromBlockTransfer(void)
                         // if bitmap is already set, it will write the current streak of data
                         for(uint16_t z = 0; z <= tempSize; z++)
                         {
-                            if(_emuEepromReadBit(tempVAddr + z, AddrBitMap) || (z == tempSize))
+                            if(_emuEepromReadBit(0, tempVAddr + z, AddrBitMap) || (z == tempSize))
                             {
                                 if(streak)
                                 {
                                     count = _emuEepromBufferWrite(tempVAddr, &tempBuffer[pEntries[u] + DATA_OFFSET + (z - streak)], streak);
                                     if(count > 0) 
                                     {
-                                        _emuEepromSetBit(tempVAddr, AddrBitMap, streak);
+                                        _emuEepromSetBit(0, tempVAddr, AddrBitMap, streak);
                                         tempVAddr += streak;
                                         streak = 0;
                                     }
@@ -589,11 +583,12 @@ ssize_t _emuEepromBlockTransfer(void)
     @param amount - Amount of bits to set.
     @return None
 *///-----------------------------------------------------------------------------
-void _emuEepromSetBit(uint16_t vAddr, uint8_t *pBitmap, uint16_t amount)
+void _emuEepromSetBit(uint16_t startAddr, uint16_t vAddr, uint8_t *pBitmap, uint16_t amount)
 {
-    for(uint16_t i = vAddr; i < (vAddr + amount); i++)
+    uint16_t index = vAddr - startAddr;
+    for(uint16_t i = index; i < (index + amount); i++)
     {
-        pBitmap[vAddr / 8u] = 1 << (vAddr % 8u);
+        pBitmap[index] = 1 << (index);
     }
 }
 
@@ -604,11 +599,11 @@ void _emuEepromSetBit(uint16_t vAddr, uint8_t *pBitmap, uint16_t amount)
     @param *pBitmap - The bitmap to read from.
     @return The value of the virtual address bit.
 *///-----------------------------------------------------------------------------
-uint8_t _emuEepromReadBit(uint16_t vAddr, uint8_t *pBitmap)
+uint8_t _emuEepromReadBit(uint16_t startAddr, uint16_t vAddr, uint8_t *pBitmap)
 {
     uint8_t mask = 0x1;
-    uint8_t index = vAddr % 8u;
-    uint8_t value = pBitmap[vAddr / 8u];
+    uint8_t index = vAddr - startAddr;
+    uint8_t value = pBitmap[vAddr / BITS_PER_BYTE];
 
     return ((value >> index) & mask);
 }
