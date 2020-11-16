@@ -37,11 +37,12 @@ int main()
 
         if(!strcmp(str, "?\n") || !strcmp(str, "help\n"))
         {
-            printf("'write'   - write value to virtual address\n"
-                    "'read'    - read value stored at virtual address\n"
-                    "'erase'   - erase data at virtual address\n"
-                    "'flush'   - write current buffer to flash\n"
-                    "'destroy' - erases emulated eeprom from flash\n");
+            printf("'write'             - write value to virtual address\n"
+                    "'read'              - read value stored at virtual address\n"
+                    "'erase'             - erase data at virtual address\n"
+                    "'flush'             - write current buffer to flash\n"
+                    "'destroy'           - erases emulated eeprom from flash\n"
+                    "'exit' or 'quit'    - exits program\n");
         }
         else if(!strcmp(str, "write\n"))
         {
