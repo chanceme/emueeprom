@@ -4,17 +4,20 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <emueeprom.h>
 #include <flash.h>
 
+#define INPUT_MAX_SIZE 32u
+
 int main()
 {
-    char str[100];
-    int value = 0;
-    int vAddr = 0;
+    char str[INPUT_MAX_SIZE];
+    int iVAddr = 0;
+    int iValue = 0;
     ssize_t count = 0;
 
     int fd = flashInit();
@@ -30,9 +33,9 @@ int main()
     while(1)
     {
         printf("> ");
-        scanf("%s", str);
+        fgets(str, INPUT_MAX_SIZE, stdin);
 
-        if(!strcmp(str, "?") || !strcmp(str, "help"))
+        if(!strcmp(str, "?\n") || !strcmp(str, "help\n"))
         {
             printf("'write'   - write value to virtual address\n"
                     "'read'    - read value stored at virtual address\n"
@@ -40,28 +43,31 @@ int main()
                     "'flush'   - write current buffer to flash\n"
                     "'destroy' - erases emulated eeprom from flash\n");
         }
-        else if(!strcmp(str, "write"))
+        else if(!strcmp(str, "write\n"))
         {
             printf("Virtual address: ");
-            scanf("%d", &vAddr);
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iVAddr = atoi(str);
             printf("Value: ");
-            scanf("%d", &value);
-            count = emuEepromWrite(vAddr, &value, sizeof(value));
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iValue = atoi(str);
+            count = emuEepromWrite(iVAddr, &iValue, sizeof(iValue));
             if(count <= 0)
             {
                 printf("Error writting.\n");
             }
             else
             {
-                printf("Wrote %d to %d.\n", value, vAddr);
+                printf("Wrote %d to %d.\n", iValue, iVAddr);
             }
             
         }
-        else if(!strcmp(str, "read"))
+        else if(!strcmp(str, "read\n"))
         {
             printf("Virtual address: ");
-            scanf("%d", &vAddr);
-            count = emuEepromRead(vAddr, &value, sizeof(value));
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iVAddr = atoi(str);
+            count = emuEepromRead(iVAddr, &iValue, sizeof(iValue));
             if(count < 0)
             {
                 printf("Error reading.\n");
@@ -72,25 +78,26 @@ int main()
             }    
             else if(count > 0)
             {
-                printf("Value: %d\n", value);
+                printf("Value: %d\n", iValue);
             }
         }
-        else if(!strcmp(str, "erase"))
+        else if(!strcmp(str, "erase\n"))
         {
             printf("Virtual address: ");
-            scanf("%d", &vAddr);
-            count = emuEepromErase(vAddr, sizeof(value));
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iVAddr = atoi(str);
+            count = emuEepromErase(iVAddr, sizeof(iValue));
             if(count < 0)
             {
                 printf("Error erasing.\n");
             }          
             else
             {
-                printf("%d erased.", vAddr);
+                printf("%d erased.", iVAddr);
             }
               
         }
-        else if(!strcmp(str, "flush"))
+        else if(!strcmp(str, "flush\n"))
         {
             count = emuEepromFlush();
             if(count > 0)
@@ -102,15 +109,19 @@ int main()
                 printf("Nothing to flush..\n");
             }
         }
-        else if(!strcmp(str, "destroy"))
+        else if(!strcmp(str, "destroy\n"))
         {
             printf("Are you sure? [y/n]\n");
-            scanf("%s", str);
+            fgets(str, INPUT_MAX_SIZE, stdin);
             if(!strcmp(str, "y") || !strcmp(str, "Y"))
             {
                 emuEepromDestroy();
                 printf("Shell commands will no longer work.\n");
             }
+        }
+        else if((!strcmp(str, "exit\n")) || (!strcmp(str, "quit\n")))
+        {
+            break;
         }
     }
 
