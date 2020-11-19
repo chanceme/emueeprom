@@ -37,8 +37,8 @@ int main()
 
         if(!strcmp(str, "?\n") || !strcmp(str, "help\n"))
         {
-            printf("'write'             - write value to virtual address\n"
-                    "'read'              - read value stored at virtual address\n"
+            printf("'write'             - write decimal value to virtual address\n"
+                    "'read'              - read decimal value stored at virtual address\n"
                     "'erase'             - erase data at virtual address\n"
                     "'flush'             - write current buffer to flash\n"
                     "'destroy'           - erases emulated eeprom from flash\n"
