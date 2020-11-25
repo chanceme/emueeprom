@@ -171,10 +171,9 @@ ssize_t emuEepromRead(uint16_t vAddr, void *pBuffer, uint16_t buffLen)
     ssize_t count = 0;
     uint8_t *pBitmap =  NULL; 
 
-    pBitmap = malloc((buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
+    pBitmap = calloc((buffLen / BITS_PER_BYTE), sizeof(uint8_t));
     if(pBitmap != NULL)
     {
-        memset(pBitmap, 0, (buffLen / BITS_PER_BYTE) + sizeof(uint8_t));
         count = _emuEepromPageRead(m_info.pageBuffer, pBitmap, vAddr, pBuffer, buffLen);
         if((count >= 0) && (count != buffLen))
         {
@@ -287,13 +286,12 @@ ssize_t _emuEepromBufferWrite(uint16_t vAddr, void const *pBuffer, uint16_t buff
             uint16_t pagesNeeded = 0;        
 
             remainingSpace -= (ENTRY_SIZE);
-            pagesNeeded = (abs(buffLen - remainingSpace) / MAX_DATA_PER_PAGE) + 2u; // 2 for existing page and remainder    
-
+            pagesNeeded = (abs(buffLen - remainingSpace) / MAX_DATA_PER_PAGE) + 2u; // 2 for existing page and remainder
             for(int i = 0; i < pagesNeeded; i++)
             {
                 memcpy(&m_info.pageBuffer[m_info.bufferPos + VADDR_OFFSET], &vAddr, sizeof(vAddr));
                 memcpy(&m_info.pageBuffer[m_info.bufferPos + SIZE_OFFSET], &remainingSpace, sizeof(remainingSpace)); 
-                memcpy(&m_info.pageBuffer[m_info.bufferPos + DATA_OFFSET], pBuffer + writeCount, remainingSpace); // < 
+                memcpy(&m_info.pageBuffer[m_info.bufferPos + DATA_OFFSET], pBuffer + writeCount, remainingSpace); 
                 m_info.bufferPos += (remainingSpace + ENTRY_SIZE);
                 writeCount += remainingSpace;
 
@@ -371,7 +369,7 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
 
             memcpy(&tempVAddr, &pPage[pEntries[i] + VADDR_OFFSET], sizeof(tempVAddr));
             memcpy(&tempSize, &pPage[pEntries[i] + SIZE_OFFSET], sizeof(tempSize));
-
+        
             if(((tempVAddr <= vAddr) && (vAddr < (tempVAddr + tempSize))) || 
             ((tempVAddr < (vAddr + buffLen)) && ((vAddr + buffLen) <= (tempVAddr + tempSize))))
             {
@@ -399,7 +397,7 @@ size_t _emuEepromPageRead(uint8_t *pPage, uint8_t *pBitmap, uint16_t vAddr, void
                 
                 for(int u = 0; u < amountFound; u++)
                 {   
-                    uint16_t foundVAddr = pEntries[i] + tempVAddr + u;
+                    uint16_t foundVAddr = tempVAddr + u;
                     // could be fragmented and require multiple entries
                     if(_emuEepromReadBit(vAddr, foundVAddr, pBitmap) == 0)
                     {
@@ -594,7 +592,7 @@ ssize_t _emuEepromBlockTransfer(void)
 *///-----------------------------------------------------------------------------
 void _emuEepromSetBit(uint16_t startAddr, uint16_t vAddr, uint8_t *pBitmap)
 {
-    assert(startAddr < vAddr);
+    assert(startAddr <= vAddr);
     uint16_t index = (vAddr - startAddr) / BITS_PER_BYTE;
     uint16_t bit = (vAddr - startAddr) % BITS_PER_BYTE;
 
