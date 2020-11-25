@@ -10,6 +10,7 @@
 
 #include <emueeprom.h>
 #include <flash.h>
+#include <test.h>
 
 #define INPUT_MAX_SIZE 32u
 
@@ -42,6 +43,7 @@ int main()
                     "'erase'             - erase data at virtual address\n"
                     "'flush'             - write current buffer to flash\n"
                     "'destroy'           - erases emulated eeprom from flash\n"
+                    "'test'              - run emueeprom tests (warning: erases existing emulated eeprom)\n"
                     "'exit' or 'quit'    - exits program\n");
         }
         else if(!strcmp(str, "write\n"))
@@ -118,6 +120,14 @@ int main()
             {
                 emuEepromDestroy();
                 printf("Shell commands will no longer work.\n");
+            }
+        }
+        else if(!strcmp(str, "test\n"))
+        {
+            int result = testSuiteEmuEeprom();
+            if(result >= 0)
+            {
+                printf("Test Passed!\n");
             }
         }
         else if((!strcmp(str, "exit\n")) || (!strcmp(str, "quit\n")))
