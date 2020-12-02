@@ -70,7 +70,10 @@ int main()
             printf("Virtual address: ");
             fgets(str, INPUT_MAX_SIZE, stdin);
             iVAddr = atoi(str);
-            count = emuEepromRead(iVAddr, &iValue, sizeof(iValue));
+            printf("Amount: ");
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iValue = atoi(str);
+            count = emuEepromRead(iVAddr, &iValue, iValue);
             if(count < 0)
             {
                 printf("Error reading.\n");
@@ -116,11 +119,16 @@ int main()
         {
             printf("Are you sure? [y/n]\n");
             fgets(str, INPUT_MAX_SIZE, stdin);
-            if(!strcmp(str, "y") || !strcmp(str, "Y"))
+            if(!strcmp(str, "y\n") || !strcmp(str, "Y\n"))
             {
                 emuEepromDestroy();
                 printf("Shell commands will no longer work.\n");
             }
+            else
+            {
+                printf("Input unknown.\n");
+            }
+            
         }
         else if(!strcmp(str, "test\n"))
         {
@@ -129,6 +137,11 @@ int main()
             {
                 printf("Test Passed!\n");
             }
+            else
+            {
+                printf("Test Failed.\n");
+            }
+            
         }
         else if((!strcmp(str, "exit\n")) || (!strcmp(str, "quit\n")))
         {
