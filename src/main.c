@@ -10,6 +10,7 @@
 
 #include <emueeprom.h>
 #include <flash.h>
+#include <test.h>
 
 #define INPUT_MAX_SIZE 32u
 
@@ -42,6 +43,7 @@ int main()
                     "'erase'             - erase data at virtual address\n"
                     "'flush'             - write current buffer to flash\n"
                     "'destroy'           - erases emulated eeprom from flash\n"
+                    "'test'              - run emueeprom tests (warning: erases existing emulated eeprom)\n"
                     "'exit' or 'quit'    - exits program\n");
         }
         else if(!strcmp(str, "write\n"))
@@ -68,7 +70,10 @@ int main()
             printf("Virtual address: ");
             fgets(str, INPUT_MAX_SIZE, stdin);
             iVAddr = atoi(str);
-            count = emuEepromRead(iVAddr, &iValue, sizeof(iValue));
+            printf("Amount: ");
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iValue = atoi(str);
+            count = emuEepromRead(iVAddr, &iValue, iValue);
             if(count < 0)
             {
                 printf("Error reading.\n");
@@ -114,11 +119,29 @@ int main()
         {
             printf("Are you sure? [y/n]\n");
             fgets(str, INPUT_MAX_SIZE, stdin);
-            if(!strcmp(str, "y") || !strcmp(str, "Y"))
+            if(!strcmp(str, "y\n") || !strcmp(str, "Y\n"))
             {
                 emuEepromDestroy();
                 printf("Shell commands will no longer work.\n");
             }
+            else
+            {
+                printf("Input unknown.\n");
+            }
+            
+        }
+        else if(!strcmp(str, "test\n"))
+        {
+            int result = testSuiteEmuEeprom();
+            if(result >= 0)
+            {
+                printf("Test Passed!\n");
+            }
+            else
+            {
+                printf("Test Failed.\n");
+            }
+            
         }
         else if((!strcmp(str, "exit\n")) || (!strcmp(str, "quit\n")))
         {
