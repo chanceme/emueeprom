@@ -72,7 +72,6 @@ ssize_t flashWrite(off_t offset, void const *pBuff, size_t numBytes)
     assert(numBytes);
 
     ssize_t count;
-
     off_t pos = lseek(m_fd, offset, SEEK_SET);
     if(pos == offset)
     {
@@ -117,30 +116,38 @@ ssize_t flashRead(off_t offset, void *pBuff, size_t numBytes)
 
 /*!------------------------------------------------------------------------------
     @brief Erase a block by writting all 0xFF.
-    @param blockNum - Which block to erase.
-    @param blockCount - Amount of blocks to erase.
+    @param blockNum - Which block to start erasing.
+    @param blockCount - Amount of blocks from blockNum to erase.
     @return None.
 *///-----------------------------------------------------------------------------
 void flashBlockErase(int blockNum, int blockCount)
 {
     assert(m_fd);
-    assert((blockNum * BLOCK_SIZE) <= (FLASH_SIZE - BLOCK_SIZE));
-
-    for(int u = 0; u < (BLOCK_SIZE / PAGE_SIZE); u++)
+    assert(((blockNum * BLOCK_SIZE) + (blockCount * BLOCK_SIZE)) <= (FLASH_SIZE - BLOCK_SIZE));
+    
+    for(int i = 0; i < blockCount; i++)
     {
-        uint8_t buffer[PAGE_SIZE];
-        memset(buffer, 0xFF, sizeof(buffer));
-
-        off_t loc = ((blockNum * BLOCK_SIZE) + (u * PAGE_SIZE));
-        
-        off_t pos = lseek(m_fd, loc, SEEK_SET);
-        if(pos == loc)
+        for(int u = 0; u < (BLOCK_SIZE / PAGE_SIZE); u++)
         {
-            int count = write(m_fd, buffer, sizeof(buffer));
-            if(count < 0)
+            uint8_t buffer[PAGE_SIZE];
+            memset(buffer, 0xFF, PAGE_SIZE);
+
+            off_t loc = ((blockNum * BLOCK_SIZE) + (i * BLOCK_SIZE) + (u * PAGE_SIZE));
+            
+            off_t pos = lseek(m_fd, loc, SEEK_SET);
+            if(pos == loc)
+            {
+                int count = write(m_fd, buffer, PAGE_SIZE);
+                if(count < 0)
+                {
+                    printf("Error erasing block.\n");
+                }
+            }
+            else
             {
                 printf("Error erasing block.\n");
             }
+            
         }
     }
 }
