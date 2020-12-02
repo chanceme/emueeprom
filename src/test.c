@@ -10,10 +10,14 @@
 #include <flash_config.h>
 #include <test.h>
 
+#define MIN_TEST_VIRT_ADDR 0u
+#define MAX_TEST_VIRT_ADDR 128u
+#define TEST_ERROR -1
+
 int _testWriteRead(void);
-int _testMultiPageWriteRead();
-// _testBlockTransfer(void);
-// _ testEraseEntry(void);
+int _testMultiPageWriteRead(void);
+int _testBlockTransfer(void);
+int _testEraseEntry(void);
 
 
 /*!------------------------------------------------------------------------------
@@ -27,7 +31,6 @@ int testSuiteEmuEeprom(void)
 
     printf("Starting test..\n");
     int result = _testWriteRead();
-    // int result = 0;
     if(result >= 0)
     {   
         printf("Single write/read passed.\n");
@@ -35,6 +38,16 @@ int testSuiteEmuEeprom(void)
         if(result >= 0)
         {
             printf("Multi-page write/read passed.\n");
+            result = _testBlockTransfer();
+            if(result >= 0)
+            {
+                printf("Transfer passed.\n");
+                result = _testEraseEntry();
+                if(result >= 0)
+                {
+                    printf("Erase passed.\n");
+                }
+            }
         }
     }
 
@@ -49,7 +62,7 @@ int testSuiteEmuEeprom(void)
 *///-----------------------------------------------------------------------------
 int _testWriteRead(void)
 {
-    int result = -1;
+    int result = TEST_ERROR;
     uint8_t testValue = 0x01;
     uint16_t vAddr = 1u;
 
@@ -62,7 +75,7 @@ int _testWriteRead(void)
         {
             if(value == testValue)
             {
-                result = 0u;
+                result = 0;
             }
         }
     }
@@ -78,9 +91,9 @@ int _testWriteRead(void)
 *///-----------------------------------------------------------------------------
 int _testMultiPageWriteRead(void)
 {
-    int result = -1;
+    int result = TEST_ERROR;
     uint8_t testArray[PAGE_SIZE] = {0};
-    uint16_t vAddr = 100u;
+    uint16_t vAddr = 50u;
 
     memset(testArray, 1u, PAGE_SIZE);
 
@@ -96,11 +109,7 @@ int _testMultiPageWriteRead(void)
             {
                 if(valueArray[i] != testArray[i])
                 {
-                    for(int u = 0; u < (PAGE_SIZE - i); u++)
-                    {
-                        printf("valueArray[%d] = %d\ntestArray[%d] = %d\n", i + u, valueArray[i + u], i + u, testArray[i + u]);
-                    }
-                    result = -1; 
+                    result = TEST_ERROR; 
                     break;
                 }
             }
@@ -116,10 +125,55 @@ int _testMultiPageWriteRead(void)
     @param None
     @return 0 if successful, -1 for error.
 *///-----------------------------------------------------------------------------
-// int testBlockTransfer(void)
-// {
+int _testBlockTransfer(void)
+{
+    uint8_t testArray[PAGE_SIZE];
+    uint16_t count = 0u;
+    uint16_t vAddr = MIN_TEST_VIRT_ADDR;
+    int result = 0;
+    emueeprom_info_t info;
+    uint8_t testBlock = 0;
 
-// }
+    // get emueeprom infomation
+    emuEepromInfo(&info);
+    testBlock = info.currBlock;
+
+    while(testBlock == info.currBlock)
+    {
+        for(uint16_t i = 0; i < PAGE_SIZE; i++)
+        {
+            testArray[i] = count++ % MAX_TEST_VIRT_ADDR;
+        }
+
+        ssize_t amount = emuEepromWrite(vAddr, testArray, PAGE_SIZE);
+        if(amount < 0)
+        {
+            result = TEST_ERROR;
+            break;
+        }
+
+        vAddr += PAGE_SIZE;
+        if(vAddr >= MAX_TEST_VIRT_ADDR)
+        {
+            vAddr = MIN_TEST_VIRT_ADDR;
+        }
+
+        emuEepromInfo(&info);
+    }
+
+    for(uint16_t i = MIN_TEST_VIRT_ADDR; i < MAX_TEST_VIRT_ADDR; i++)
+    {
+        uint8_t data = 0;
+        ssize_t amount = emuEepromRead(i, &data, sizeof(uint8_t));
+        if((amount < 0) || (data != i))
+        {
+            result = TEST_ERROR;
+            break;
+        }        
+    }
+
+    return result;
+}
 
 
 /*!------------------------------------------------------------------------------
@@ -127,10 +181,25 @@ int _testMultiPageWriteRead(void)
     @param None
     @return 0 if successful, -1 for error.
 *///-----------------------------------------------------------------------------
-// int testEraseEntry(void)
-// {
+int _testEraseEntry(void)
+{
+    uint16_t vAddr = 50u;
+    int result = -1;
 
-// }
+    ssize_t count = emuEepromErase(vAddr, sizeof(uint8_t));
+    count = emuEepromFlush();
+    if(count >= 0)
+    {
+        uint8_t data = 1u;
+        count = emuEepromRead(vAddr, &data, sizeof(data));
+        if(count == 0)
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
 
 
 
