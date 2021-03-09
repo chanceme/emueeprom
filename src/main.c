@@ -43,6 +43,7 @@ int main()
                     "'erase'             - erase data at virtual address\n"
                     "'flush'             - write current buffer to flash\n"
                     "'destroy'           - erases emulated eeprom from flash\n"
+                    "'view'              - view areas of flash\n"
                     "'test'              - run emueeprom tests (warning: erases existing emulated eeprom)\n"
                     "'exit' or 'quit'    - exits program\n");
         }
@@ -115,6 +116,17 @@ int main()
                 printf("Nothing to flush..\n");
             }
         }
+        else if(!strcmp(str, "view\n"))
+        {
+            printf("Flash Offset: ");
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iVAddr = atoi(str);
+            printf("Amount (Bytes): ");
+            fgets(str, INPUT_MAX_SIZE, stdin);
+            iValue = atoi(str);
+
+            flashDump(iVAddr, iValue);
+        }    
         else if(!strcmp(str, "destroy\n"))
         {
             printf("Are you sure? [y/n]\n");

@@ -12,6 +12,8 @@
 
 #include <flash.h>
 
+#define BYTES_PER_LINE 8u
+
 static int m_fd = 0;
 
 /*!------------------------------------------------------------------------------
@@ -98,7 +100,7 @@ ssize_t flashRead(off_t offset, void *pBuff, size_t numBytes)
     assert(m_fd);
     assert(numBytes);
 
-    ssize_t count;
+    ssize_t count = 0;
 
     off_t pos = lseek(m_fd, offset, SEEK_SET);
     if(pos == offset)
@@ -148,6 +150,59 @@ void flashBlockErase(int blockNum, int blockCount)
                 printf("Error erasing block.\n");
             }
             
+        }
+    }
+}
+
+
+/*!------------------------------------------------------------------------------
+    @brief Dumps flash values.
+    @param start - Starting location in flash.
+    @param bytes - Amount of bytes to display
+    @return None.
+*///-----------------------------------------------------------------------------
+void flashDump(uint32_t address, uint32_t bytes)
+{
+    // will display aligned
+    uint32_t startAddr = address - (address % BYTES_PER_LINE);
+    uint8_t lines = bytes / BYTES_PER_LINE;
+    uint8_t buffer[BYTES_PER_LINE] = {0};
+
+    if((bytes % BYTES_PER_LINE) != 0)
+    {
+        lines++;
+    }
+
+    if((address + bytes) > (lines * BYTES_PER_LINE))
+    {
+        lines++;
+    }
+
+    for(int i = 0; i < lines; i++)
+    {
+        printf("0x%08x |", (startAddr + (i * BYTES_PER_LINE)));
+        ssize_t amount = flashRead(startAddr + (i * BYTES_PER_LINE), buffer, BYTES_PER_LINE);
+        if(amount == BYTES_PER_LINE)
+        {
+            for(int u = 0; u < BYTES_PER_LINE; u++)
+            {
+                if((startAddr + (i * BYTES_PER_LINE) + u) == address)
+                {
+                    printf("[%02x ", buffer[u]);
+                }
+                else if(((i * BYTES_PER_LINE) + u) == (bytes + address - 1))
+                {
+                    printf(" %02x]", buffer[u]);
+                }
+                else
+                {
+                    printf(" %02x ", buffer[u]);
+                }
+            }
+
+            printf("| %c%c%c%c%c%c%c%c\n", (char)buffer[0], \
+                (char)buffer[1], (char)buffer[2], (char)buffer[3], \
+                (char)buffer[4], (char)buffer[5], (char)buffer[6], (char)buffer[7]);
         }
     }
 }
